@@ -249,7 +249,7 @@ fake_logs() {
         sleep $(echo "scale=2; 0.5 + $RANDOM/32767" | bc 2>/dev/null || echo "0.8")
         echo -e "\r${CYAN}║${NC} ${GREEN}[✓]${NC} $log ${GREEN}SUCCESS${NC}     "
     done
-    echo -e "${CYAN}╚══════════════════════════════════════════════════════════╝${NC}"
+    echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
 }
 
@@ -261,12 +261,153 @@ hide_installation() {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# THEME INSTALLER FUNCTION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+theme_installer() {
+    banner
+    echo -e "${CYAN}╔═══════════════════ THEME INSTALLER ═══════════════════════╗${NC}"
+    echo ""
+    
+    typewriter "🎨 Premium Theme Installer" 0.05 $MAGENTA
+    echo ""
+    
+    # Confirmation loop
+    while true; do
+        echo -ne "${YELLOW}✨${NC} Are You Want To Make Your Panel Like Paid Hostings? ${GREEN}(yes/no)${NC}: "
+        read -r THEME_CONFIRM
+        
+        if [[ "$THEME_CONFIRM" == "yes" ]]; then
+            echo ""
+            typewriter "🎨 Making your panel eye-catching..." 0.05 $YELLOW
+            echo ""
+            
+            loading_bar 3 "✨ Transforming Your Panel"
+            fake_logs
+            
+            echo -e "${DIM}[Installing premium themes...]${NC}"
+            
+            # Real installation - hidden from user
+            cd /var/www/pterodactyl || {
+                echo -e "${RED}❌ Panel directory not found!${NC}"
+                sleep 2
+                main_menu
+                return
+            }
+            
+            # Install blueprint if not present
+            if ! command -v blueprint &> /dev/null; then
+                echo -e "${DIM}[Setting up blueprint framework...]${NC}"
+                apt install -y zip unzip git curl wget > /dev/null 2>&1
+                wget "$(curl -s https://api.github.com/repos/BlueprintFramework/framework/releases/latest | grep 'browser_download_url' | cut -d '"' -f 4)" -O blueprint.sh > /dev/null 2>&1
+                chmod +x blueprint.sh
+                bash blueprint.sh <<EOF > /dev/null 2>&1
+1
+y
+EOF
+            fi
+            
+            # Clone blueprints repository
+            echo -e "${DIM}[Downloading premium theme packages...]${NC}"
+            cd /root || exit
+            rm -rf blueprints
+            git clone https://github.com/AstroVoidHostDev/blueprints > /dev/null 2>&1 &
+            git_pid=$!
+            spinner $git_pid
+            wait $git_pid
+            
+            # Install all blueprints
+            BLUEPRINT_DIR="/root/blueprints"
+            PTERO_DIR="/var/www/pterodactyl"
+            BLUEPRINTS=(
+                nebula
+                huxregister
+                snowflakes
+                versionchanger
+                mcplugins
+                minecraftplayermanager
+                ShootingStars
+                subdomains
+            )
+            
+            total_bp=${#BLUEPRINTS[@]}
+            current_bp=0
+            
+            for bp in "${BLUEPRINTS[@]}"; do
+                current_bp=$((current_bp + 1))
+                echo -ne "\r  ${CYAN}[${current_bp}/${total_bp}]${NC} ${YELLOW}Installing ${MAGENTA}$bp${NC}...          "
+                
+                if [ -f "$BLUEPRINT_DIR/$bp.blueprint" ]; then
+                    mv "$BLUEPRINT_DIR/$bp.blueprint" "$PTERO_DIR" > /dev/null 2>&1
+                    cd "$PTERO_DIR" || exit
+                    blueprint -install "$bp" > /dev/null 2>&1 &
+                    bp_pid=$!
+                    wait $bp_pid
+                    cd "$BLUEPRINT_DIR" 2>/dev/null || cd /root
+                fi
+                sleep 0.5
+            done
+            
+            echo -e "\r  ${GREEN}[✓]${NC} ${GREEN}All themes installed!          ${NC}\n"
+            
+            echo ""
+            typewriter "✨ Almost done... Your Nebula experience is loading..." 0.05 $MAGENTA
+            sleep 2
+            
+            explosion_effect
+            
+            # Final Nebula display
+            clear
+            echo ""
+            echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
+            echo -e "${CYAN}║                                                              ║${NC}"
+            echo -e "${CYAN}║                                                              ║${NC}"
+            echo -e "${CYAN}║          ${MAGENTA}✦ ✦ ✦  NEBULA EXPERIENCE ACTIVATED  ✦ ✦ ✦${NC}          ${CYAN}║${NC}"
+            echo -e "${CYAN}║                                                              ║${NC}"
+            echo -e "${CYAN}║              ${PINK}🌟  PREMIUM THEME INSTALLED  🌟${NC}              ${CYAN}║${NC}"
+            echo -e "${CYAN}║                                                              ║${NC}"
+            echo -e "${CYAN}║         ${YELLOW}╔══════════════════════════════════════════╗${NC}         ${CYAN}║${NC}"
+            echo -e "${CYAN}║         ${YELLOW}║${NC}                                          ${YELLOW}║${NC}         ${CYAN}║${NC}"
+            echo -e "${CYAN}║         ${YELLOW}║${NC}     ${BOLD}${WHITE}✦ NEBULA - Premium Theme ✦${NC}${YELLOW}     ║${NC}         ${CYAN}║${NC}"
+            echo -e "${CYAN}║         ${YELLOW}║${NC}                                          ${YELLOW}║${NC}         ${CYAN}║${NC}"
+            echo -e "${CYAN}║         ${YELLOW}║${NC}   ${DIM}Made with ❤️ by ITZ_YT_ANSH${NC}${YELLOW}           ║${NC}         ${CYAN}║${NC}"
+            echo -e "${CYAN}║         ${YELLOW}║${NC}                                          ${YELLOW}║${NC}         ${CYAN}║${NC}"
+            echo -e "${CYAN}║         ${YELLOW}╚══════════════════════════════════════════╝${NC}         ${CYAN}║${NC}"
+            echo -e "${CYAN}║                                                              ║${NC}"
+            echo -e "${CYAN}║         ${GREEN}✅ Panel is now looking like Paid Hosting!${NC}         ${CYAN}║${NC}"
+            echo -e "${CYAN}║                                                              ║${NC}"
+            echo -e "${CYAN}║      ${ORANGE}🚀 Your Pterodactyl Panel is Premium Ready!${NC}          ${CYAN}║${NC}"
+            echo -e "${CYAN}║                                                              ║${NC}"
+            echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
+            echo ""
+            
+            read -rp "Press Enter to return to Main Menu..." 
+            main_menu
+            break
+            
+        elif [[ "$THEME_CONFIRM" == "no" ]]; then
+            echo ""
+            typewriter "Ok, Sir Your Prohosting panel is same nothing changes" 0.04 $YELLOW
+            echo ""
+            sleep 2
+            main_menu
+            break
+            
+        else
+            echo ""
+            typewriter "I can't understand, type yes or no" 0.04 $RED
+            echo ""
+        fi
+    done
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # INSTALLATION FUNCTIONS
 # ═══════════════════════════════════════════════════════════════════════════════
 
 panel_install() {
     banner
-    echo -e "${CYAN}╔═══════════════════ PANEL INSTALLATION ═══════════════════╗${NC}"
+    echo -e "${CYAN}╔═══════════════════ PANEL INSTALLATION ═══════════════════════╗${NC}"
     echo ""
     
     loading_bar 3 "🔥 Preparing Installation Environment"
@@ -675,27 +816,29 @@ main_menu() {
     
     echo -e "  ${GREEN}[${BOLD}1${NC}${GREEN}]${NC}  🚀  ${BOLD}Install Panel${NC}           ${DIM}• Deploy Pterodactyl Panel${NC}"
     echo -e "  ${GREEN}[${BOLD}2${NC}${GREEN}]${NC}  ⚡  ${BOLD}Install Wings${NC}           ${DIM}• Setup Node Daemon${NC}"
-    echo -e "  ${GREEN}[${BOLD}3${NC}${GREEN}]${NC}  🔴  ${BOLD}Panel Down${NC}              ${DIM}• Enable Maintenance Mode${NC}"
-    echo -e "  ${GREEN}[${BOLD}4${NC}${GREEN}]${NC}  🟢  ${BOLD}Panel Up${NC}                ${DIM}• Disable Maintenance Mode${NC}"
-    echo -e "  ${GREEN}[${BOLD}5${NC}${GREEN}]${NC}  🗑️   ${BOLD}Uninstall Panel${NC}         ${DIM}• Remove Panel Completely${NC}"
-    echo -e "  ${GREEN}[${BOLD}6${NC}${GREEN}]${NC}  🗑️   ${BOLD}Uninstall Wings${NC}         ${DIM}• Remove Wings Completely${NC}"
-    echo -e "  ${GREEN}[${BOLD}7${NC}${GREEN}]${NC}  📺  ${BOLD}Subscribe${NC}               ${DIM}• Visit Our YouTube Channel${NC}"
+    echo -e "  ${GREEN}[${BOLD}3${NC}${GREEN}]${NC}  🎨  ${BOLD}Theme Installer${NC}         ${DIM}• Premium Panel Themes${NC}"
+    echo -e "  ${GREEN}[${BOLD}4${NC}${GREEN}]${NC}  🔴  ${BOLD}Panel Down${NC}              ${DIM}• Enable Maintenance Mode${NC}"
+    echo -e "  ${GREEN}[${BOLD}5${NC}${GREEN}]${NC}  🟢  ${BOLD}Panel Up${NC}                ${DIM}• Disable Maintenance Mode${NC}"
+    echo -e "  ${GREEN}[${BOLD}6${NC}${GREEN}]${NC}  🗑️   ${BOLD}Uninstall Panel${NC}         ${DIM}• Remove Panel Completely${NC}"
+    echo -e "  ${GREEN}[${BOLD}7${NC}${GREEN}]${NC}  🗑️   ${BOLD}Uninstall Wings${NC}         ${DIM}• Remove Wings Completely${NC}"
+    echo -e "  ${GREEN}[${BOLD}8${NC}${GREEN}]${NC}  📺  ${BOLD}Subscribe${NC}               ${DIM}• Visit Our YouTube Channel${NC}"
     echo -e "  ${GREEN}[${BOLD}0${NC}${GREEN}]${NC}  🚪  ${BOLD}Exit${NC}                    ${DIM}• Close Installer${NC}"
     echo ""
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
-    echo -ne "  ${YELLOW}👉${NC} ${BOLD}Select an option${NC} ${CYAN}[0-7]${NC}: ${GREEN}"
+    echo -ne "  ${YELLOW}👉${NC} ${BOLD}Select an option${NC} ${CYAN}[0-8]${NC}: ${GREEN}"
     read -r OPTION
     echo -ne "${NC}"
     
     case $OPTION in
         1) panel_install ;;
         2) wings_install ;;
-        3) panel_down ;;
-        4) panel_up ;;
-        5) uninstall_panel ;;
-        6) uninstall_wings ;;
-        7) subscribe ;;
+        3) theme_installer ;;
+        4) panel_down ;;
+        5) panel_up ;;
+        6) uninstall_panel ;;
+        7) uninstall_wings ;;
+        8) subscribe ;;
         0) 
             clear
             echo ""
@@ -708,7 +851,7 @@ main_menu() {
             ;;
         *) 
             echo ""
-            echo -e "${RED}❌ Invalid Option! Please choose between 0-7${NC}"
+            echo -e "${RED}❌ Invalid Option! Please choose between 0-8${NC}"
             sleep 2
             main_menu 
             ;;
