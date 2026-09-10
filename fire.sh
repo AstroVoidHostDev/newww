@@ -248,7 +248,7 @@ fake_logs() {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# THEME INSTALLER - MAIN FUNCTION
+# THEME INSTALLER - MAIN
 # ═══════════════════════════════════════════════════════════════════════════════
 
 theme_installer() {
@@ -316,7 +316,7 @@ theme_menu() {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# THEME INSTALL FUNCTION
+# THEME INSTALL
 # ═══════════════════════════════════════════════════════════════════════════════
 
 theme_install_run() {
@@ -327,7 +327,6 @@ theme_install_run() {
     typewriter "🎨 Making your panel eye-catching..." 0.05 $YELLOW
     echo ""
     
-    # Check panel directory
     if [ ! -d "/var/www/pterodactyl" ]; then
         echo -e "${RED}❌ Pterodactyl panel not found at /var/www/pterodactyl${NC}"
         echo -e "${YELLOW}⚠️  Please install the panel first!${NC}"
@@ -341,40 +340,31 @@ theme_install_run() {
     
     export PTERODACTYL_DIRECTORY="/var/www/pterodactyl"
     
-    # ═══════════════════════════════════════════════════════════════════════════
     # STEP 1: Install Blueprint Framework
-    # ═══════════════════════════════════════════════════════════════════════════
     echo -e "${DIM}[Step 1/3] Installing Blueprint Framework...${NC}"
     
     (
-        # Install dependencies
         apt install -y curl wget unzip ca-certificates git gnupg zip >>"$LOG_FILE" 2>&1 || true
         
-        # Navigate to Pterodactyl directory
         cd "$PTERODACTYL_DIRECTORY" || exit 1
         
-        # Download Blueprint's latest release
         wget "https://github.com/BlueprintFramework/framework/releases/latest/download/release.zip" -O "$PTERODACTYL_DIRECTORY/release.zip" >>"$LOG_FILE" 2>&1
         unzip -o release.zip >>"$LOG_FILE" 2>&1
         rm -f release.zip
         
-        # Add Node.js apt repository
         mkdir -p /etc/apt/keyrings
         curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg >>"$LOG_FILE" 2>&1
         echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list >>"$LOG_FILE" 2>&1
         apt update >>"$LOG_FILE" 2>&1
         apt install -y nodejs >>"$LOG_FILE" 2>&1 || true
         
-        # Install yarn and node dependencies
         cd /var/www/pterodactyl || exit 1
         npm i -g yarn >>"$LOG_FILE" 2>&1 || true
         yarn install >>"$LOG_FILE" 2>&1 || true
         
-        # Create .blueprintrc file
         touch "$PTERODACTYL_DIRECTORY/.blueprintrc"
         printf 'WEBUSER="www-data";\nOWNERSHIP="www-data:www-data";\nUSERSHELL="/bin/bash";\n' > "$PTERODACTYL_DIRECTORY/.blueprintrc"
         
-        # Give blueprint.sh execute permissions and run it
         chmod +x "$PTERODACTYL_DIRECTORY/blueprint.sh"
         yes | bash "$PTERODACTYL_DIRECTORY/blueprint.sh" >>"$LOG_FILE" 2>&1 || true
     ) &
@@ -383,15 +373,9 @@ theme_install_run() {
     spinner $bp_install_pid
     wait $bp_install_pid 2>/dev/null
     
-    if ! command -v blueprint &>/dev/null; then
-        echo -e "  ${YELLOW}[!]${NC} ${YELLOW}Blueprint command not found in PATH, checking local...${NC}"
-    fi
-    
     echo -e "  ${GREEN}[✓]${NC} ${GREEN}Blueprint Framework ready!${NC}\n"
     
-    # ═══════════════════════════════════════════════════════════════════════════
-    # STEP 2: Clone blueprints repository
-    # ═══════════════════════════════════════════════════════════════════════════
+    # STEP 2: Clone blueprints
     echo -e "${DIM}[Step 2/3] Downloading premium theme packages...${NC}"
     
     (
@@ -414,9 +398,7 @@ theme_install_run() {
     
     echo -e "  ${GREEN}[✓]${NC} ${GREEN}Theme packages downloaded!${NC}\n"
     
-    # ═══════════════════════════════════════════════════════════════════════════
     # STEP 3: Install all blueprints
-    # ═══════════════════════════════════════════════════════════════════════════
     echo -e "${DIM}[Step 3/3] Applying premium themes...${NC}"
     echo ""
     
@@ -461,13 +443,11 @@ theme_install_run() {
     fi
     echo ""
     
-    echo ""
     typewriter "✨ Almost done... Your Nebula experience is loading..." 0.05 $MAGENTA
     sleep 2
     
     explosion_effect
     
-    # Final Nebula display
     clear
     echo ""
     echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
@@ -497,7 +477,7 @@ theme_install_run() {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# THEME UNINSTALL FUNCTION
+# THEME UNINSTALL (FULL - INCLUDING BLUEPRINT FRAMEWORK)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 theme_uninstall_run() {
@@ -505,10 +485,10 @@ theme_uninstall_run() {
     echo -e "${RED}╔═══════════════════ THEME UNINSTALLATION ═══════════════════════╗${NC}"
     echo ""
     
-    typewriter "⚠️  WARNING: This will remove all installed themes!" 0.05 $RED
+    typewriter "⚠️  WARNING: This will remove ALL themes AND Blueprint Framework!" 0.04 $RED
     echo ""
     
-    echo -ne "${RED}🤔${NC} Are you sure you want to uninstall themes? ${GREEN}(yes/no)${NC}: "
+    echo -ne "${RED}🤔${NC} Are you sure you want to fully uninstall? ${GREEN}(yes/no)${NC}: "
     read -r UNINSTALL_CONFIRM
     
     while true; do
@@ -533,7 +513,7 @@ theme_uninstall_run() {
     done
     
     echo ""
-    typewriter "🗑️  Removing all themes..." 0.05 $RED
+    typewriter "🗑️  Removing all themes and Blueprint..." 0.05 $RED
     echo ""
     
     loading_bar 2 "🧹 Cleaning Theme Files"
@@ -553,7 +533,10 @@ theme_uninstall_run() {
     local total_bp=${#BLUEPRINTS[@]}
     local current_bp=0
     
-    echo -e "${DIM}[Removing premium themes...]${NC}"
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STEP 1: Uninstall all blueprints
+    # ═══════════════════════════════════════════════════════════════════════════
+    echo -e "${DIM}[Step 1/3] Removing premium themes...${NC}"
     echo ""
     
     for bp in "${BLUEPRINTS[@]}"; do
@@ -569,18 +552,77 @@ theme_uninstall_run() {
     
     echo -e "\r  ${GREEN}[✓]${NC} ${GREEN}All themes removed!          ${NC}\n"
     
-    echo -e "${DIM}[Cleaning up blueprint files...]${NC}"
-    rm -rf /root/blueprints >>"$LOG_FILE" 2>&1
-    rm -f "$PTERO_DIR"/*.blueprint >>"$LOG_FILE" 2>&1
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STEP 2: Uninstall Blueprint Framework itself
+    # ═══════════════════════════════════════════════════════════════════════════
+    echo -e "${DIM}[Step 2/3] Removing Blueprint Framework...${NC}"
+    
+    (
+        cd "$PTERO_DIR" 2>/dev/null || exit 1
+        
+        # Run blueprint uninstall if available
+        if [ -f "$PTERO_DIR/blueprint.sh" ]; then
+            if command -v blueprint &>/dev/null; then
+                yes | blueprint -uninstall >>"$LOG_FILE" 2>&1 || true
+            fi
+        fi
+        
+        # Remove blueprint binary from system
+        rm -f /usr/local/bin/blueprint >>"$LOG_FILE" 2>&1
+        rm -f /usr/bin/blueprint >>"$LOG_FILE" 2>&1
+        
+        # Remove blueprint framework files
+        rm -rf "$PTERO_DIR/.blueprint" >>"$LOG_FILE" 2>&1
+        rm -rf "$PTERO_DIR/blueprint" >>"$LOG_FILE" 2>&1
+        rm -f "$PTERO_DIR/blueprint.sh" >>"$LOG_FILE" 2>&1
+        rm -f "$PTERO_DIR/release.zip" >>"$LOG_FILE" 2>&1
+        rm -f "$PTERO_DIR/.blueprintrc" >>"$LOG_FILE" 2>&1
+        
+        # Remove blueprint related directories
+        rm -rf /var/lib/blueprint >>"$LOG_FILE" 2>&1
+        rm -rf /etc/blueprint >>"$LOG_FILE" 2>&1
+        
+        # Remove blueprint database entries (if any)
+        mysql -e "DROP DATABASE IF EXISTS blueprint;" >>"$LOG_FILE" 2>&1 || true
+    ) &
+    
+    bp_remove_pid=$!
+    spinner $bp_remove_pid
+    wait $bp_remove_pid 2>/dev/null
+    
+    echo -e "  ${GREEN}[✓]${NC} ${GREEN}Blueprint Framework removed!${NC}\n"
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STEP 3: Cleanup remaining files
+    # ═══════════════════════════════════════════════════════════════════════════
+    echo -e "${DIM}[Step 3/3] Final cleanup...${NC}"
+    
+    (
+        rm -rf /root/blueprints >>"$LOG_FILE" 2>&1
+        rm -f "$PTERO_DIR"/*.blueprint >>"$LOG_FILE" 2>&1
+        rm -f "$PTERO_DIR"/*.blueprint.bak >>"$LOG_FILE" 2>&1
+        
+        # Clear Laravel cache
+        cd "$PTERO_DIR" 2>/dev/null || exit 0
+        php artisan cache:clear >>"$LOG_FILE" 2>&1 || true
+        php artisan view:clear >>"$LOG_FILE" 2>&1 || true
+        php artisan config:clear >>"$LOG_FILE" 2>&1 || true
+    ) &
+    
+    cleanup_pid=$!
+    spinner $cleanup_pid
+    wait $cleanup_pid 2>/dev/null
+    
+    echo -e "  ${GREEN}[✓]${NC} ${GREEN}Cleanup complete!${NC}\n"
     
     explosion_effect
     
     echo ""
     echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${GREEN}║                                                              ║${NC}"
-    echo -e "${GREEN}║            ✅ ALL THEMES UNINSTALLED SUCCESSFULLY!           ║${NC}"
+    echo -e "${GREEN}║       ✅ THEMES + BLUEPRINT UNINSTALLED SUCCESSFULLY!        ║${NC}"
     echo -e "${GREEN}║                                                              ║${NC}"
-    echo -e "${GREEN}║         🔄 Your panel is back to default appearance          ║${NC}"
+    echo -e "${GREEN}║    🔄 Your panel is back to default Pterodactyl appearance   ║${NC}"
     echo -e "${GREEN}║                                                              ║${NC}"
     echo -e "${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
