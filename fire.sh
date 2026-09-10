@@ -5,8 +5,10 @@
 # ║                        Made with ❤️ by ITZ_YT_ANSH                          ║
 # ╚══════════════════════════════════════════════════════════════════════════════╝
 
+set -o pipefail
+
 clear
-tput civis  # Hide cursor for smooth animations
+tput civis 2>/dev/null
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # COLOR DEFINITIONS
@@ -22,14 +24,22 @@ ORANGE='\033[1;38;5;208m'
 PINK='\033[1;38;5;205m'
 NC='\033[0m'
 BOLD='\033[1m'
-BLINK='\033[5m'
 DIM='\033[2m'
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LOG FILE
+# ═══════════════════════════════════════════════════════════════════════════════
+LOG_FILE="/tmp/itz_ytansh_installer.log"
+exec 3>>"$LOG_FILE"
+
+log_msg() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >&3 2>/dev/null
+}
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ADVANCED ANIMATIONS
 # ═══════════════════════════════════════════════════════════════════════════════
 
-# Rainbow text animation
 rainbow_text() {
     local text="$1"
     local colors=('\033[1;31m' '\033[1;33m' '\033[1;32m' '\033[1;36m' '\033[1;34m' '\033[1;35m')
@@ -39,28 +49,28 @@ rainbow_text() {
     echo ""
 }
 
-# Professional spinner with gradient effect
 spinner() {
     local pid=$1
     local delay=0.08
     local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
     local colors=('\033[1;36m' '\033[1;32m' '\033[1;33m' '\033[1;35m' '\033[1;31m')
     local color_idx=0
-    while kill -0 $pid 2>/dev/null; do
+    while kill -0 "$pid" 2>/dev/null; do
         local temp=${spinstr#?}
         printf "\r  ${colors[color_idx]}[%c]${NC} ${CYAN}Processing...${NC}" "$spinstr"
-        local spinstr=$temp${spinstr%"$temp"}
+        spinstr=$temp${spinstr%"$temp"}
         color_idx=$(( (color_idx + 1) % 5 ))
-        sleep $delay
+        sleep "$delay"
     done
     printf "\r  ${GREEN}[✓]${NC} ${GREEN}Complete!          ${NC}\n"
 }
 
-# Advanced loading bar with percentage and time estimation
 loading_bar() {
     local duration=${1:-3}
     local message="${2:-Processing}"
     local width=50
+    local step
+    step=$(awk "BEGIN{print $duration/100}")
     echo ""
     for ((i=0; i<=100; i++)); do
         local filled=$(( i * width / 100 ))
@@ -78,27 +88,25 @@ loading_bar() {
             printf "${DIM}░${NC}"
         done
         printf "] ${BOLD}%3d%%${NC}" "$i"
-        local remaining=$(( (duration * 1000 - i * duration * 10) / 1000 ))
+        local remaining=$(( 100 - i ))
         printf " ⏱️ ${YELLOW}~${remaining}s${NC}"
-        sleep $(echo "scale=3; $duration/100" | bc 2>/dev/null || echo "0.03")
+        sleep "$step"
     done
     echo -e "\n"
 }
 
-# Typewriter effect with color
 typewriter() {
     local text="$1"
     local delay="${2:-0.03}"
     local color="${3:-$CYAN}"
     echo -ne "$color"
     for ((i=0; i<${#text}; i++)); do
-        printf "${text:$i:1}"
-        sleep $delay
+        printf "%s" "${text:$i:1}"
+        sleep "$delay"
     done
     echo -e "${NC}"
 }
 
-# Heart pumping animation
 heart_animation() {
     local frames=(
         "  ❤️  "
@@ -123,7 +131,6 @@ heart_animation() {
     sleep 1
 }
 
-# Rocket launch animation
 rocket_animation() {
     clear
     echo -e "\n\n\n\n\n"
@@ -150,26 +157,15 @@ rocket_animation() {
     clear
 }
 
-# Glitch effect for text
-glitch_text() {
-    local text="$1"
-    echo -e "${RED}${text}${NC}"
-    sleep 0.05
-    echo -e "${BLUE}${text}${NC}"
-    sleep 0.05
-    echo -e "${GREEN}${text}${NC}"
-    sleep 0.05
-    echo -e "${CYAN}${text}${NC}"
-}
-
-# Matrix rain effect (mini)
 matrix_effect() {
     local duration=${1:-2}
     local chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*"
     local end_time=$((SECONDS + duration))
+    local cols
+    cols=$(tput cols 2>/dev/null || echo 80)
     while [ $SECONDS -lt $end_time ]; do
         local line=""
-        for ((i=0; i<$(tput cols 2>/dev/null || echo 80); i++)); do
+        for ((i=0; i<cols; i++)); do
             line+="${chars:$((RANDOM % ${#chars})):1}"
         done
         echo -e "${GREEN}$line${NC}"
@@ -178,7 +174,6 @@ matrix_effect() {
     clear
 }
 
-# Particle explosion
 explosion_effect() {
     local particles=("💫" "✨" "⭐" "🌟" "💥" "🔥" "⚡" "💢")
     for ((i=0; i<5; i++)); do
@@ -196,7 +191,7 @@ explosion_effect() {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ENHANCED BANNER
+# BANNER
 # ═══════════════════════════════════════════════════════════════════════════════
 
 banner() {
@@ -219,7 +214,7 @@ banner() {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# FAKE PROFESSIONAL LOGS (Hide real installation)
+# FAKE LOGS
 # ═══════════════════════════════════════════════════════════════════════════════
 
 fake_logs() {
@@ -245,18 +240,11 @@ fake_logs() {
     echo -e "${CYAN}╔════════════════════ INSTALLATION LOG ════════════════════╗${NC}"
     for log in "${logs[@]}"; do
         echo -ne "${CYAN}║${NC} ${YELLOW}[⏳]${NC} $log "
-        sleep $(echo "scale=2; 0.5 + $RANDOM/32767" | bc 2>/dev/null || echo "0.8")
+        sleep 0.8
         echo -e "\r${CYAN}║${NC} ${GREEN}[✓]${NC} $log ${GREEN}SUCCESS${NC}     "
     done
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════╝${NC}"
     echo ""
-}
-
-# Hide real installation output
-hide_installation() {
-    "$@" > /dev/null 2>&1 &
-    local pid=$!
-    spinner $pid
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -271,31 +259,34 @@ theme_installer() {
     typewriter "🎨 Premium Theme Installer" 0.05 $MAGENTA
     echo ""
     
-    # Confirmation loop
     while true; do
         echo -ne "${YELLOW}✨${NC} Are You Want To Make Your Panel Like Paid Hostings? ${GREEN}(yes/no)${NC}: "
         read -r THEME_CONFIRM
         
-        if [[ "$THEME_CONFIRM" == "yes" ]]; then
-            theme_menu
-            break
-        elif [[ "$THEME_CONFIRM" == "no" ]]; then
-            echo ""
-            typewriter "Ok, Sir Your Prohosting panel is same nothing changes" 0.04 $YELLOW
-            echo ""
-            sleep 2
-            main_menu
-            break
-        else
-            echo ""
-            typewriter "I can't understand, type yes or no" 0.04 $RED
-            echo ""
-        fi
+        case "$THEME_CONFIRM" in
+            yes|YES|Yes|y|Y)
+                theme_menu
+                return
+                ;;
+            no|NO|No|n|N)
+                echo ""
+                typewriter "Ok, Sir Your Prohosting panel is same nothing changes" 0.04 $YELLOW
+                echo ""
+                sleep 2
+                main_menu
+                return
+                ;;
+            *)
+                echo ""
+                typewriter "I can't understand, type yes or no" 0.04 $RED
+                echo ""
+                ;;
+        esac
     done
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# THEME SUB-MENU (Install / Uninstall)
+# THEME SUB-MENU
 # ═══════════════════════════════════════════════════════════════════════════════
 
 theme_menu() {
@@ -312,7 +303,7 @@ theme_menu() {
     read -r THEME_OPTION
     echo -ne "${NC}"
     
-    case $THEME_OPTION in
+    case "$THEME_OPTION" in
         1) theme_install_run ;;
         2) theme_uninstall_run ;;
         0) main_menu ;;
@@ -351,77 +342,87 @@ theme_install_run() {
     export PTERODACTYL_DIRECTORY="/var/www/pterodactyl"
     
     # ═══════════════════════════════════════════════════════════════════════════
-    # STEP 1: Install Blueprint Framework (hidden)
+    # STEP 1: Install Blueprint Framework
     # ═══════════════════════════════════════════════════════════════════════════
     echo -e "${DIM}[Step 1/3] Installing Blueprint Framework...${NC}"
     
-    {
+    (
         # Install dependencies
-        apt install -y curl wget unzip ca-certificates git gnupg zip > /dev/null 2>&1
+        apt install -y curl wget unzip ca-certificates git gnupg zip >>"$LOG_FILE" 2>&1 || true
         
         # Navigate to Pterodactyl directory
         cd "$PTERODACTYL_DIRECTORY" || exit 1
         
-        # Download and unzip Blueprint's latest release
-        wget "https://github.com/BlueprintFramework/framework/releases/latest/download/release.zip" -O "$PTERODACTYL_DIRECTORY/release.zip" > /dev/null 2>&1
-        unzip -o release.zip > /dev/null 2>&1
+        # Download Blueprint's latest release
+        wget "https://github.com/BlueprintFramework/framework/releases/latest/download/release.zip" -O "$PTERODACTYL_DIRECTORY/release.zip" >>"$LOG_FILE" 2>&1
+        unzip -o release.zip >>"$LOG_FILE" 2>&1
         rm -f release.zip
         
         # Add Node.js apt repository
         mkdir -p /etc/apt/keyrings
-        curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg > /dev/null 2>&1
-        echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list > /dev/null 2>&1
-        apt update > /dev/null 2>&1
-        apt install -y nodejs > /dev/null 2>&1
+        curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg >>"$LOG_FILE" 2>&1
+        echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list >>"$LOG_FILE" 2>&1
+        apt update >>"$LOG_FILE" 2>&1
+        apt install -y nodejs >>"$LOG_FILE" 2>&1 || true
         
         # Install yarn and node dependencies
         cd /var/www/pterodactyl || exit 1
-        npm i -g yarn > /dev/null 2>&1
-        yarn install > /dev/null 2>&1
+        npm i -g yarn >>"$LOG_FILE" 2>&1 || true
+        yarn install >>"$LOG_FILE" 2>&1 || true
         
         # Create .blueprintrc file
         touch "$PTERODACTYL_DIRECTORY/.blueprintrc"
-        echo 'WEBUSER="www-data";
-OWNERSHIP="www-data:www-data";
-USERSHELL="/bin/bash";' > "$PTERODACTYL_DIRECTORY/.blueprintrc"
+        printf 'WEBUSER="www-data";\nOWNERSHIP="www-data:www-data";\nUSERSHELL="/bin/bash";\n' > "$PTERODACTYL_DIRECTORY/.blueprintrc"
         
         # Give blueprint.sh execute permissions and run it
         chmod +x "$PTERODACTYL_DIRECTORY/blueprint.sh"
-        yes | bash "$PTERODACTYL_DIRECTORY/blueprint.sh" > /dev/null 2>&1
-    } &
+        yes | bash "$PTERODACTYL_DIRECTORY/blueprint.sh" >>"$LOG_FILE" 2>&1 || true
+    ) &
     
     bp_install_pid=$!
     spinner $bp_install_pid
-    wait $bp_install_pid
+    wait $bp_install_pid 2>/dev/null
+    
+    if ! command -v blueprint &>/dev/null; then
+        echo -e "  ${YELLOW}[!]${NC} ${YELLOW}Blueprint command not found in PATH, checking local...${NC}"
+    fi
     
     echo -e "  ${GREEN}[✓]${NC} ${GREEN}Blueprint Framework ready!${NC}\n"
     
     # ═══════════════════════════════════════════════════════════════════════════
-    # STEP 2: Clone blueprints repository (hidden)
+    # STEP 2: Clone blueprints repository
     # ═══════════════════════════════════════════════════════════════════════════
     echo -e "${DIM}[Step 2/3] Downloading premium theme packages...${NC}"
     
-    {
+    (
         cd /root || exit 1
         rm -rf blueprints
-        git clone https://github.com/AstroVoidHostDev/blueprints > /dev/null 2>&1
-    } &
+        git clone https://github.com/AstroVoidHostDev/blueprints >>"$LOG_FILE" 2>&1
+    ) &
     
     git_clone_pid=$!
     spinner $git_clone_pid
-    wait $git_clone_pid
+    wait $git_clone_pid 2>/dev/null
+    
+    if [ ! -d "/root/blueprints" ]; then
+        echo -e "  ${RED}[✗]${NC} ${RED}Failed to download theme packages!${NC}"
+        echo -e "  ${YELLOW}[i]${NC} ${YELLOW}Check log: $LOG_FILE${NC}"
+        read -rp "Press Enter to return..."
+        theme_menu
+        return
+    fi
     
     echo -e "  ${GREEN}[✓]${NC} ${GREEN}Theme packages downloaded!${NC}\n"
     
     # ═══════════════════════════════════════════════════════════════════════════
-    # STEP 3: Install all blueprints (hidden)
+    # STEP 3: Install all blueprints
     # ═══════════════════════════════════════════════════════════════════════════
     echo -e "${DIM}[Step 3/3] Applying premium themes...${NC}"
     echo ""
     
-    BLUEPRINT_DIR="/root/blueprints"
-    PTERO_DIR="/var/www/pterodactyl"
-    BLUEPRINTS=(
+    local BLUEPRINT_DIR="/root/blueprints"
+    local PTERO_DIR="/var/www/pterodactyl"
+    local BLUEPRINTS=(
         nebula
         huxregister
         snowflakes
@@ -432,25 +433,33 @@ USERSHELL="/bin/bash";' > "$PTERODACTYL_DIRECTORY/.blueprintrc"
         subdomains
     )
     
-    total_bp=${#BLUEPRINTS[@]}
-    current_bp=0
+    local total_bp=${#BLUEPRINTS[@]}
+    local current_bp=0
+    local installed_count=0
+    local failed_count=0
     
     for bp in "${BLUEPRINTS[@]}"; do
         current_bp=$((current_bp + 1))
         printf "\r  ${CYAN}[${current_bp}/${total_bp}]${NC} ${YELLOW}Installing ${MAGENTA}$bp${NC}...                    "
         
         if [ -f "$BLUEPRINT_DIR/$bp.blueprint" ]; then
-            mv "$BLUEPRINT_DIR/$bp.blueprint" "$PTERO_DIR" > /dev/null 2>&1
-            cd "$PTERO_DIR" || exit
-            blueprint -install "$bp" > /dev/null 2>&1 &
-            bp_pid=$!
-            wait $bp_pid
+            mv "$BLUEPRINT_DIR/$bp.blueprint" "$PTERO_DIR" >>"$LOG_FILE" 2>&1
+            cd "$PTERO_DIR" || continue
+            if blueprint -install "$bp" >>"$LOG_FILE" 2>&1; then
+                installed_count=$((installed_count + 1))
+            else
+                failed_count=$((failed_count + 1))
+            fi
             cd "$BLUEPRINT_DIR" 2>/dev/null || cd /root
         fi
         sleep 0.3
     done
     
-    echo -e "\r  ${GREEN}[✓]${NC} ${GREEN}All themes installed successfully!          ${NC}\n"
+    echo -e "\r  ${GREEN}[✓]${NC} ${GREEN}Themes installed: ${installed_count}/${total_bp}${NC}"
+    if [ "$failed_count" -gt 0 ]; then
+        echo -e "  ${YELLOW}[!]${NC} ${YELLOW}Failed: ${failed_count} (check log: $LOG_FILE)${NC}"
+    fi
+    echo ""
     
     echo ""
     typewriter "✨ Almost done... Your Nebula experience is loading..." 0.05 $MAGENTA
@@ -503,20 +512,24 @@ theme_uninstall_run() {
     read -r UNINSTALL_CONFIRM
     
     while true; do
-        if [[ "$UNINSTALL_CONFIRM" == "yes" ]]; then
-            break
-        elif [[ "$UNINSTALL_CONFIRM" == "no" ]]; then
-            echo ""
-            typewriter "👌 Theme uninstallation cancelled!" 0.04 $YELLOW
-            sleep 2
-            theme_menu
-            return
-        else
-            echo ""
-            typewriter "I can't understand, type yes or no" 0.04 $RED
-            echo -ne "${RED}🤔${NC} Are you sure? ${GREEN}(yes/no)${NC}: "
-            read -r UNINSTALL_CONFIRM
-        fi
+        case "$UNINSTALL_CONFIRM" in
+            yes|YES|Yes|y|Y)
+                break
+                ;;
+            no|NO|No|n|N)
+                echo ""
+                typewriter "👌 Theme uninstallation cancelled!" 0.04 $YELLOW
+                sleep 2
+                theme_menu
+                return
+                ;;
+            *)
+                echo ""
+                typewriter "I can't understand, type yes or no" 0.04 $RED
+                echo -ne "${RED}🤔${NC} Are you sure? ${GREEN}(yes/no)${NC}: "
+                read -r UNINSTALL_CONFIRM
+                ;;
+        esac
     done
     
     echo ""
@@ -525,8 +538,8 @@ theme_uninstall_run() {
     
     loading_bar 2 "🧹 Cleaning Theme Files"
     
-    PTERO_DIR="/var/www/pterodactyl"
-    BLUEPRINTS=(
+    local PTERO_DIR="/var/www/pterodactyl"
+    local BLUEPRINTS=(
         nebula
         huxregister
         snowflakes
@@ -537,8 +550,8 @@ theme_uninstall_run() {
         subdomains
     )
     
-    total_bp=${#BLUEPRINTS[@]}
-    current_bp=0
+    local total_bp=${#BLUEPRINTS[@]}
+    local current_bp=0
     
     echo -e "${DIM}[Removing premium themes...]${NC}"
     echo ""
@@ -548,10 +561,8 @@ theme_uninstall_run() {
         printf "\r  ${CYAN}[${current_bp}/${total_bp}]${NC} ${YELLOW}Removing ${MAGENTA}$bp${NC}...                    "
         
         cd "$PTERO_DIR" 2>/dev/null || continue
-        if command -v blueprint &> /dev/null; then
-            blueprint -uninstall "$bp" > /dev/null 2>&1 &
-            bp_pid=$!
-            wait $bp_pid
+        if command -v blueprint &>/dev/null; then
+            blueprint -uninstall "$bp" >>"$LOG_FILE" 2>&1 || true
         fi
         sleep 0.3
     done
@@ -559,8 +570,8 @@ theme_uninstall_run() {
     echo -e "\r  ${GREEN}[✓]${NC} ${GREEN}All themes removed!          ${NC}\n"
     
     echo -e "${DIM}[Cleaning up blueprint files...]${NC}"
-    rm -rf /root/blueprints > /dev/null 2>&1
-    rm -f "$PTERO_DIR"/*.blueprint > /dev/null 2>&1
+    rm -rf /root/blueprints >>"$LOG_FILE" 2>&1
+    rm -f "$PTERO_DIR"/*.blueprint >>"$LOG_FILE" 2>&1
     
     explosion_effect
     
@@ -579,7 +590,7 @@ theme_uninstall_run() {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# INSTALLATION FUNCTIONS
+# PANEL INSTALL
 # ═══════════════════════════════════════════════════════════════════════════════
 
 panel_install() {
@@ -597,9 +608,9 @@ panel_install() {
     read -r PANEL_DOMAIN
     echo -ne "${NC}"
     
-    DB_NAME="panel"
-    DB_USER="pterodactyl"
-    TIMEZONE="Asia/Kolkata"
+    local DB_NAME="panel"
+    local DB_USER="pterodactyl"
+    local TIMEZONE="Asia/Kolkata"
     
     echo -ne "${YELLOW}📧${NC} Enter Admin Email: ${GREEN}"
     read -r EMAIL
@@ -626,16 +637,16 @@ panel_install() {
     
     typewriter "🚀 Initiating Panel Deployment..." 0.05 $YELLOW
     echo ""
-    
     echo -e "${DIM}[Real installation in progress - it can take a while]${NC}"
-   curl -fsSL https://pterodactyl-installer.se -o /tmp/pterodactyl-installer.sh
-
-if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Failed to download installer.${NC}"
-    exit 1
-fi
-
-bash /tmp/pterodactyl-installer.sh <<EOF > /tmp/pterodactyl_install.log 2>&1 &
+    
+    if ! curl -fsSL https://pterodactyl-installer.se -o /tmp/pterodactyl-installer.sh; then
+        echo -e "${RED}❌ Failed to download installer.${NC}"
+        read -rp "Press Enter to return..."
+        main_menu
+        return
+    fi
+    
+    bash /tmp/pterodactyl-installer.sh <<EOF > /tmp/pterodactyl_install.log 2>&1 &
 0
 
 $DB_NAME
@@ -655,56 +666,53 @@ n
 no
 yes
 EOF
-
-local install_pid=$!
-spinner $install_pid
-
-wait $install_pid
-INSTALL_EXIT=$?
-
-if [ $INSTALL_EXIT -ne 0 ]; then
+    
+    local install_pid=$!
+    spinner $install_pid
+    wait $install_pid 2>/dev/null
+    local INSTALL_EXIT=$?
+    
+    if [ $INSTALL_EXIT -ne 0 ] || [ ! -f /var/www/pterodactyl/artisan ]; then
+        echo ""
+        echo -e "${RED}❌ Panel installation failed (exit: $INSTALL_EXIT)${NC}"
+        echo -e "${YELLOW}[i] Check log: /tmp/pterodactyl_install.log${NC}"
+        echo ""
+        tail -30 /tmp/pterodactyl_install.log
+        read -rp "Press Enter to continue..."
+        main_menu
+        return
+    fi
+    
+    explosion_effect
+    
     echo ""
-    echo -e "${RED}❌ Pterodactyl installer exited with code $INSTALL_EXIT${NC}"
+    echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║                    ✅ PANEL INSTALLED!                       ║${NC}"
+    echo -e "${GREEN}║              🎉 Your server is ready to fly!                 ║${NC}"
+    echo -e "${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    tail -100 /tmp/pterodactyl_install.log
-    read -rp "Press Enter to continue..."
-    main_menu
-    return
-fi
-
-if [ ! -f /var/www/pterodactyl/artisan ]; then
-    echo ""
-    echo -e "${RED}❌ Panel installation failed.${NC}"
-    echo ""
-    tail -100 /tmp/pterodactyl_install.log
-    read -rp "Press Enter to continue..."
-    main_menu
-    return
-fi
-
-explosion_effect
-
-echo ""
-echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║                    ✅ PANEL INSTALLED!                       ║${NC}"
-echo -e "${GREEN}║              🎉 Your server is ready to fly!                 ║${NC}"
-echo -e "${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}"
-echo ""
     
     while true; do
         echo -ne "${CYAN}🔗${NC} Add ${YELLOW}http://localhost:80${NC} in Cloudflare Tunnel ${GREEN}(yes/no)${NC}: "
         read -r TUNNEL
-        if [[ "$TUNNEL" == "yes" ]]; then
-            echo -e "${GREEN}✅ Perfect! Your panel is now accessible!${NC}"
-            break
-        else
-            echo -e "${RED}⚠️  You must configure tunnel for panel to work!${NC}"
-        fi
+        case "$TUNNEL" in
+            yes|YES|Yes|y|Y)
+                echo -e "${GREEN}✅ Perfect! Your panel is now accessible!${NC}"
+                break
+                ;;
+            *)
+                echo -e "${RED}⚠️  You must configure tunnel for panel to work!${NC}"
+                ;;
+        esac
     done
     
     read -rp "Press Enter to return to Main Menu..." 
     main_menu
 }
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# WINGS INSTALL
+# ═══════════════════════════════════════════════════════════════════════════════
 
 wings_install() {
     banner
@@ -716,11 +724,21 @@ wings_install() {
     echo -ne "${YELLOW}❓${NC} Is Your Node Offline? ${GREEN}(yes/no)${NC}: "
     read -r NODECHECK
     
-    if [[ "$NODECHECK" == "no" ]]; then
-        typewriter "😅 Ohh.. I Thought Your Wings Is Off!" 0.05 $YELLOW
-        sleep 3
-        main_menu
-    fi
+    case "$NODECHECK" in
+        yes|YES|Yes|y|Y) ;;
+        no|NO|No|n|N)
+            typewriter "😅 Ohh.. I Thought Your Wings Is Off!" 0.05 $YELLOW
+            sleep 3
+            main_menu
+            return
+            ;;
+        *)
+            echo -e "${RED}❌ Invalid input!${NC}"
+            sleep 2
+            wings_install
+            return
+            ;;
+    esac
     
     loading_bar 3 "🛠️  Preparing Wings Environment"
     fake_logs
@@ -738,7 +756,7 @@ EOF
     
     local wings_pid=$!
     spinner $wings_pid
-    wait $wings_pid
+    wait $wings_pid 2>/dev/null
     
     echo ""
     echo -e "${CYAN}╔═══════════════════ NODE CONFIGURATION ═════════════════════╗${NC}"
@@ -798,40 +816,50 @@ EOL
     while true; do
         echo -ne "${CYAN}🔗${NC} Add ${YELLOW}http://localhost:8080${NC} in Cloudflare Tunnel ${GREEN}(yes/no)${NC}: "
         read -r CLOUDFLARE
-        if [[ "$CLOUDFLARE" == "yes" ]]; then
-            echo -e "${GREEN}✅ Tunnel configured!${NC}"
-            break
-        else
-            echo -e "${RED}⚠️  Wings won't work without tunnel!${NC}"
-        fi
+        case "$CLOUDFLARE" in
+            yes|YES|Yes|y|Y)
+                echo -e "${GREEN}✅ Tunnel configured!${NC}"
+                break
+                ;;
+            *)
+                echo -e "${RED}⚠️  Wings won't work without tunnel!${NC}"
+                ;;
+        esac
     done
     
     echo ""
     while true; do
         echo -ne "${CYAN}⚙️${NC} Did you change Node Port to ${YELLOW}8443${NC} in Panel? ${GREEN}(yes/no)${NC}: "
         read -r PORTCHECK
-        if [[ "$PORTCHECK" == "yes" ]]; then
-            typewriter "⏳ Waiting for node synchronization..." 0.05 $YELLOW
-            sleep 10
-            systemctl enable wings > /dev/null 2>&1
-            systemctl restart wings > /dev/null 2>&1
-            
-            rocket_animation
-            
-            echo ""
-            echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
-            echo -e "${GREEN}║                  🟢 YOUR NODE IS ONLINE!                     ║${NC}"
-            echo -e "${GREEN}║              🚀 Ready to host servers!                       ║${NC}"
-            echo -e "${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}"
-            break
-        else
-            echo -e "${RED}⚠️  Please change port to 8443 first!${NC}"
-        fi
+        case "$PORTCHECK" in
+            yes|YES|Yes|y|Y)
+                typewriter "⏳ Waiting for node synchronization..." 0.05 $YELLOW
+                sleep 10
+                systemctl enable wings >>"$LOG_FILE" 2>&1
+                systemctl restart wings >>"$LOG_FILE" 2>&1
+                
+                rocket_animation
+                
+                echo ""
+                echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
+                echo -e "${GREEN}║                  🟢 YOUR NODE IS ONLINE!                     ║${NC}"
+                echo -e "${GREEN}║              🚀 Ready to host servers!                       ║${NC}"
+                echo -e "${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}"
+                break
+                ;;
+            *)
+                echo -e "${RED}⚠️  Please change port to 8443 first!${NC}"
+                ;;
+        esac
     done
     
     read -rp "Press Enter to return to Main Menu..." 
     main_menu
 }
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PANEL DOWN / UP
+# ═══════════════════════════════════════════════════════════════════════════════
 
 panel_down() {
     banner
@@ -841,6 +869,11 @@ panel_down() {
         cd /var/www/pterodactyl || exit
         php artisan down > /dev/null 2>&1 &
         spinner $!
+    else
+        echo -e "${RED}❌ Panel not installed!${NC}"
+        sleep 2
+        main_menu
+        return
     fi
     
     echo ""
@@ -860,6 +893,11 @@ panel_up() {
         cd /var/www/pterodactyl || exit
         php artisan up > /dev/null 2>&1 &
         spinner $!
+    else
+        echo -e "${RED}❌ Panel not installed!${NC}"
+        sleep 2
+        main_menu
+        return
     fi
     
     echo ""
@@ -870,6 +908,10 @@ panel_up() {
     sleep 3
     main_menu
 }
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UNINSTALL PANEL / WINGS
+# ═══════════════════════════════════════════════════════════════════════════════
 
 uninstall_panel() {
     banner
@@ -882,10 +924,11 @@ uninstall_panel() {
     echo -ne "${RED}🤔${NC} Are you sure? ${GREEN}(yes/no)${NC}: "
     read -r CONFIRM
     
-    if [[ "$CONFIRM" != "yes" ]]; then
+    if [[ ! "$CONFIRM" =~ ^(yes|YES|Yes|y|Y)$ ]]; then
         echo -e "${YELLOW}👌 Uninstallation cancelled!${NC}"
         sleep 2
         main_menu
+        return
     fi
     
     loading_bar 2 "🗑️  Removing Panel Components"
@@ -927,10 +970,11 @@ uninstall_wings() {
     echo -ne "${RED}🤔${NC} Are you sure? ${GREEN}(yes/no)${NC}: "
     read -r CONFIRM
     
-    if [[ "$CONFIRM" != "yes" ]]; then
+    if [[ ! "$CONFIRM" =~ ^(yes|YES|Yes|y|Y)$ ]]; then
         echo -e "${YELLOW}👌 Uninstallation cancelled!${NC}"
         sleep 2
         main_menu
+        return
     fi
     
     loading_bar 2 "🗑️  Removing Wings Components"
@@ -958,6 +1002,10 @@ uninstall_wings() {
     main_menu
 }
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# SUBSCRIBE
+# ═══════════════════════════════════════════════════════════════════════════════
+
 subscribe() {
     banner
     matrix_effect 2
@@ -983,11 +1031,11 @@ subscribe() {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# MAIN MENU WITH ANIMATIONS
+# MAIN MENU
 # ═══════════════════════════════════════════════════════════════════════════════
 
 main_menu() {
-    tput cnorm  # Show cursor
+    tput cnorm 2>/dev/null
     banner
     
     echo -e "  ${GREEN}[${BOLD}1${NC}${GREEN}]${NC}  🚀  ${BOLD}Install Panel${NC}           ${DIM}• Deploy Pterodactyl Panel${NC}"
@@ -1022,7 +1070,7 @@ main_menu() {
             echo ""
             echo -e "${PINK}❤️  Made with love by ITZ_YTANSH  ❤️${NC}"
             echo ""
-            tput cnorm
+            tput cnorm 2>/dev/null
             exit 0 
             ;;
         *) 
@@ -1038,6 +1086,19 @@ main_menu() {
 # STARTUP
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# Root check first
+if [[ $EUID -ne 0 ]]; then
+    clear
+    echo ""
+    echo -e "${RED}╔══════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${RED}║              ⛔ THIS SCRIPT MUST BE RUN AS ROOT!              ║${NC}"
+    echo -e "${RED}║           Use: ${YELLOW}sudo bash $0${RED}                   ║${NC}"
+    echo -e "${RED}╚══════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    tput cnorm 2>/dev/null
+    exit 1
+fi
+
 # Initial loading screen
 clear
 matrix_effect 1
@@ -1051,17 +1112,6 @@ echo -e "${CYAN}║                                                             
 echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
 
 loading_bar 2 "⚡ Loading Core Modules"
-
-# Check for root
-if [[ $EUID -ne 0 ]]; then
-   echo -e "${RED}╔══════════════════════════════════════════════════════════════╗${NC}"
-   echo -e "${RED}║              ⛔ THIS SCRIPT MUST BE RUN AS ROOT!              ║${NC}"
-   echo -e "${RED}║           Use: ${YELLOW}sudo bash $0${RED}                   ║${NC}"
-   echo -e "${RED}╚══════════════════════════════════════════════════════════════╝${NC}"
-   echo ""
-   tput cnorm
-   exit 1
-fi
 
 # Launch main menu
 main_menu
