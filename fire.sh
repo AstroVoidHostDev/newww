@@ -245,11 +245,10 @@ fake_logs() {
     echo -e "${CYAN}╔════════════════════ INSTALLATION LOG ════════════════════╗${NC}"
     for log in "${logs[@]}"; do
         echo -ne "${CYAN}║${NC} ${YELLOW}[⏳]${NC} $log "
-        # Random delay for realism
         sleep $(echo "scale=2; 0.5 + $RANDOM/32767" | bc 2>/dev/null || echo "0.8")
         echo -e "\r${CYAN}║${NC} ${GREEN}[✓]${NC} $log ${GREEN}SUCCESS${NC}     "
     done
-    echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
+    echo -e "${CYAN}╚══════════════════════════════════════════════════════════╝${NC}"
     echo ""
 }
 
@@ -261,7 +260,7 @@ hide_installation() {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# THEME INSTALLER FUNCTION
+# THEME INSTALLER - MAIN FUNCTION
 # ═══════════════════════════════════════════════════════════════════════════════
 
 theme_installer() {
@@ -278,113 +277,8 @@ theme_installer() {
         read -r THEME_CONFIRM
         
         if [[ "$THEME_CONFIRM" == "yes" ]]; then
-            echo ""
-            typewriter "🎨 Making your panel eye-catching..." 0.05 $YELLOW
-            echo ""
-            
-            loading_bar 3 "✨ Transforming Your Panel"
-            fake_logs
-            
-            echo -e "${DIM}[Installing premium themes...]${NC}"
-            
-            # Real installation - hidden from user
-            cd /var/www/pterodactyl || {
-                echo -e "${RED}❌ Panel directory not found!${NC}"
-                sleep 2
-                main_menu
-                return
-            }
-            
-            # Install blueprint if not present
-            if ! command -v blueprint &> /dev/null; then
-                echo -e "${DIM}[Setting up blueprint framework...]${NC}"
-                apt install -y zip unzip git curl wget > /dev/null 2>&1
-                wget "$(curl -s https://api.github.com/repos/BlueprintFramework/framework/releases/latest | grep 'browser_download_url' | cut -d '"' -f 4)" -O blueprint.sh > /dev/null 2>&1
-                chmod +x blueprint.sh
-                bash blueprint.sh <<EOF > /dev/null 2>&1
-1
-y
-EOF
-            fi
-            
-            # Clone blueprints repository
-            echo -e "${DIM}[Downloading premium theme packages...]${NC}"
-            cd /root || exit
-            rm -rf blueprints
-            git clone https://github.com/AstroVoidHostDev/blueprints > /dev/null 2>&1 &
-            git_pid=$!
-            spinner $git_pid
-            wait $git_pid
-            
-            # Install all blueprints
-            BLUEPRINT_DIR="/root/blueprints"
-            PTERO_DIR="/var/www/pterodactyl"
-            BLUEPRINTS=(
-                nebula
-                huxregister
-                snowflakes
-                versionchanger
-                mcplugins
-                minecraftplayermanager
-                ShootingStars
-                subdomains
-            )
-            
-            total_bp=${#BLUEPRINTS[@]}
-            current_bp=0
-            
-            for bp in "${BLUEPRINTS[@]}"; do
-                current_bp=$((current_bp + 1))
-                echo -ne "\r  ${CYAN}[${current_bp}/${total_bp}]${NC} ${YELLOW}Installing ${MAGENTA}$bp${NC}...          "
-                
-                if [ -f "$BLUEPRINT_DIR/$bp.blueprint" ]; then
-                    mv "$BLUEPRINT_DIR/$bp.blueprint" "$PTERO_DIR" > /dev/null 2>&1
-                    cd "$PTERO_DIR" || exit
-                    blueprint -install "$bp" > /dev/null 2>&1 &
-                    bp_pid=$!
-                    wait $bp_pid
-                    cd "$BLUEPRINT_DIR" 2>/dev/null || cd /root
-                fi
-                sleep 0.5
-            done
-            
-            echo -e "\r  ${GREEN}[✓]${NC} ${GREEN}All themes installed!          ${NC}\n"
-            
-            echo ""
-            typewriter "✨ Almost done... Your Nebula experience is loading..." 0.05 $MAGENTA
-            sleep 2
-            
-            explosion_effect
-            
-            # Final Nebula display
-            clear
-            echo ""
-            echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-            echo -e "${CYAN}║                                                              ║${NC}"
-            echo -e "${CYAN}║                                                              ║${NC}"
-            echo -e "${CYAN}║          ${MAGENTA}✦ ✦ ✦  NEBULA EXPERIENCE ACTIVATED  ✦ ✦ ✦${NC}          ${CYAN}║${NC}"
-            echo -e "${CYAN}║                                                              ║${NC}"
-            echo -e "${CYAN}║              ${PINK}🌟  PREMIUM THEME INSTALLED  🌟${NC}              ${CYAN}║${NC}"
-            echo -e "${CYAN}║                                                              ║${NC}"
-            echo -e "${CYAN}║         ${YELLOW}╔══════════════════════════════════════════╗${NC}         ${CYAN}║${NC}"
-            echo -e "${CYAN}║         ${YELLOW}║${NC}                                          ${YELLOW}║${NC}         ${CYAN}║${NC}"
-            echo -e "${CYAN}║         ${YELLOW}║${NC}     ${BOLD}${WHITE}✦ NEBULA - Premium Theme ✦${NC}${YELLOW}     ║${NC}         ${CYAN}║${NC}"
-            echo -e "${CYAN}║         ${YELLOW}║${NC}                                          ${YELLOW}║${NC}         ${CYAN}║${NC}"
-            echo -e "${CYAN}║         ${YELLOW}║${NC}   ${DIM}Made with ❤️ by ITZ_YT_ANSH${NC}${YELLOW}           ║${NC}         ${CYAN}║${NC}"
-            echo -e "${CYAN}║         ${YELLOW}║${NC}                                          ${YELLOW}║${NC}         ${CYAN}║${NC}"
-            echo -e "${CYAN}║         ${YELLOW}╚══════════════════════════════════════════╝${NC}         ${CYAN}║${NC}"
-            echo -e "${CYAN}║                                                              ║${NC}"
-            echo -e "${CYAN}║         ${GREEN}✅ Panel is now looking like Paid Hosting!${NC}         ${CYAN}║${NC}"
-            echo -e "${CYAN}║                                                              ║${NC}"
-            echo -e "${CYAN}║      ${ORANGE}🚀 Your Pterodactyl Panel is Premium Ready!${NC}          ${CYAN}║${NC}"
-            echo -e "${CYAN}║                                                              ║${NC}"
-            echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
-            echo ""
-            
-            read -rp "Press Enter to return to Main Menu..." 
-            main_menu
+            theme_menu
             break
-            
         elif [[ "$THEME_CONFIRM" == "no" ]]; then
             echo ""
             typewriter "Ok, Sir Your Prohosting panel is same nothing changes" 0.04 $YELLOW
@@ -392,13 +286,296 @@ EOF
             sleep 2
             main_menu
             break
-            
         else
             echo ""
             typewriter "I can't understand, type yes or no" 0.04 $RED
             echo ""
         fi
     done
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# THEME SUB-MENU (Install / Uninstall)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+theme_menu() {
+    banner
+    echo -e "${CYAN}╔═══════════════════ THEME MANAGER ═══════════════════════╗${NC}"
+    echo ""
+    echo -e "  ${GREEN}[${BOLD}1${NC}${GREEN}]${NC}  🎨  ${BOLD}Install Theme${NC}           ${DIM}• Premium Panel Themes${NC}"
+    echo -e "  ${GREEN}[${BOLD}2${NC}${GREEN}]${NC}  🗑️   ${BOLD}Uninstall Theme${NC}         ${DIM}• Remove Themes & Blueprint${NC}"
+    echo -e "  ${GREEN}[${BOLD}0${NC}${GREEN}]${NC}  🔙  ${BOLD}Back${NC}                    ${DIM}• Return to Main Menu${NC}"
+    echo ""
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    echo -ne "  ${YELLOW}👉${NC} ${BOLD}Select an option${NC} ${CYAN}[0-2]${NC}: ${GREEN}"
+    read -r THEME_OPTION
+    echo -ne "${NC}"
+    
+    case $THEME_OPTION in
+        1) theme_install_run ;;
+        2) theme_uninstall_run ;;
+        0) main_menu ;;
+        *) 
+            echo -e "${RED}❌ Invalid Option! Please choose between 0-2${NC}"
+            sleep 2
+            theme_menu 
+            ;;
+    esac
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# THEME INSTALL FUNCTION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+theme_install_run() {
+    banner
+    echo -e "${CYAN}╔═══════════════════ THEME INSTALLATION ═══════════════════════╗${NC}"
+    echo ""
+    
+    typewriter "🎨 Making your panel eye-catching..." 0.05 $YELLOW
+    echo ""
+    
+    # Check panel directory
+    if [ ! -d "/var/www/pterodactyl" ]; then
+        echo -e "${RED}❌ Pterodactyl panel not found at /var/www/pterodactyl${NC}"
+        echo -e "${YELLOW}⚠️  Please install the panel first!${NC}"
+        sleep 3
+        main_menu
+        return
+    fi
+    
+    loading_bar 3 "✨ Preparing Theme Environment"
+    fake_logs
+    
+    export PTERODACTYL_DIRECTORY="/var/www/pterodactyl"
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STEP 1: Install Blueprint Framework (hidden)
+    # ═══════════════════════════════════════════════════════════════════════════
+    echo -e "${DIM}[Step 1/3] Installing Blueprint Framework...${NC}"
+    
+    {
+        # Install dependencies
+        apt install -y curl wget unzip ca-certificates git gnupg zip > /dev/null 2>&1
+        
+        # Navigate to Pterodactyl directory
+        cd "$PTERODACTYL_DIRECTORY" || exit 1
+        
+        # Download and unzip Blueprint's latest release
+        wget "https://github.com/BlueprintFramework/framework/releases/latest/download/release.zip" -O "$PTERODACTYL_DIRECTORY/release.zip" > /dev/null 2>&1
+        unzip -o release.zip > /dev/null 2>&1
+        rm -f release.zip
+        
+        # Add Node.js apt repository
+        mkdir -p /etc/apt/keyrings
+        curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg > /dev/null 2>&1
+        echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list > /dev/null 2>&1
+        apt update > /dev/null 2>&1
+        apt install -y nodejs > /dev/null 2>&1
+        
+        # Install yarn and node dependencies
+        cd /var/www/pterodactyl || exit 1
+        npm i -g yarn > /dev/null 2>&1
+        yarn install > /dev/null 2>&1
+        
+        # Create .blueprintrc file
+        touch "$PTERODACTYL_DIRECTORY/.blueprintrc"
+        echo 'WEBUSER="www-data";
+OWNERSHIP="www-data:www-data";
+USERSHELL="/bin/bash";' > "$PTERODACTYL_DIRECTORY/.blueprintrc"
+        
+        # Give blueprint.sh execute permissions and run it
+        chmod +x "$PTERODACTYL_DIRECTORY/blueprint.sh"
+        yes | bash "$PTERODACTYL_DIRECTORY/blueprint.sh" > /dev/null 2>&1
+    } &
+    
+    bp_install_pid=$!
+    spinner $bp_install_pid
+    wait $bp_install_pid
+    
+    echo -e "  ${GREEN}[✓]${NC} ${GREEN}Blueprint Framework ready!${NC}\n"
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STEP 2: Clone blueprints repository (hidden)
+    # ═══════════════════════════════════════════════════════════════════════════
+    echo -e "${DIM}[Step 2/3] Downloading premium theme packages...${NC}"
+    
+    {
+        cd /root || exit 1
+        rm -rf blueprints
+        git clone https://github.com/AstroVoidHostDev/blueprints > /dev/null 2>&1
+    } &
+    
+    git_clone_pid=$!
+    spinner $git_clone_pid
+    wait $git_clone_pid
+    
+    echo -e "  ${GREEN}[✓]${NC} ${GREEN}Theme packages downloaded!${NC}\n"
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STEP 3: Install all blueprints (hidden)
+    # ═══════════════════════════════════════════════════════════════════════════
+    echo -e "${DIM}[Step 3/3] Applying premium themes...${NC}"
+    echo ""
+    
+    BLUEPRINT_DIR="/root/blueprints"
+    PTERO_DIR="/var/www/pterodactyl"
+    BLUEPRINTS=(
+        nebula
+        huxregister
+        snowflakes
+        versionchanger
+        mcplugins
+        minecraftplayermanager
+        ShootingStars
+        subdomains
+    )
+    
+    total_bp=${#BLUEPRINTS[@]}
+    current_bp=0
+    
+    for bp in "${BLUEPRINTS[@]}"; do
+        current_bp=$((current_bp + 1))
+        printf "\r  ${CYAN}[${current_bp}/${total_bp}]${NC} ${YELLOW}Installing ${MAGENTA}$bp${NC}...                    "
+        
+        if [ -f "$BLUEPRINT_DIR/$bp.blueprint" ]; then
+            mv "$BLUEPRINT_DIR/$bp.blueprint" "$PTERO_DIR" > /dev/null 2>&1
+            cd "$PTERO_DIR" || exit
+            blueprint -install "$bp" > /dev/null 2>&1 &
+            bp_pid=$!
+            wait $bp_pid
+            cd "$BLUEPRINT_DIR" 2>/dev/null || cd /root
+        fi
+        sleep 0.3
+    done
+    
+    echo -e "\r  ${GREEN}[✓]${NC} ${GREEN}All themes installed successfully!          ${NC}\n"
+    
+    echo ""
+    typewriter "✨ Almost done... Your Nebula experience is loading..." 0.05 $MAGENTA
+    sleep 2
+    
+    explosion_effect
+    
+    # Final Nebula display
+    clear
+    echo ""
+    echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║                                                              ║${NC}"
+    echo -e "${CYAN}║                                                              ║${NC}"
+    echo -e "${CYAN}║          ${MAGENTA}✦ ✦ ✦  NEBULA EXPERIENCE ACTIVATED  ✦ ✦ ✦${NC}          ${CYAN}║${NC}"
+    echo -e "${CYAN}║                                                              ║${NC}"
+    echo -e "${CYAN}║              ${PINK}🌟  PREMIUM THEME INSTALLED  🌟${NC}              ${CYAN}║${NC}"
+    echo -e "${CYAN}║                                                              ║${NC}"
+    echo -e "${CYAN}║         ${YELLOW}╔══════════════════════════════════════════╗${NC}         ${CYAN}║${NC}"
+    echo -e "${CYAN}║         ${YELLOW}║${NC}                                          ${YELLOW}║${NC}         ${CYAN}║${NC}"
+    echo -e "${CYAN}║         ${YELLOW}║${NC}     ${BOLD}${WHITE}✦ NEBULA - Premium Theme ✦${NC}${YELLOW}     ║${NC}         ${CYAN}║${NC}"
+    echo -e "${CYAN}║         ${YELLOW}║${NC}                                          ${YELLOW}║${NC}         ${CYAN}║${NC}"
+    echo -e "${CYAN}║         ${YELLOW}║${NC}   ${DIM}Made with ❤️ by ITZ_YT_ANSH${NC}${YELLOW}           ║${NC}         ${CYAN}║${NC}"
+    echo -e "${CYAN}║         ${YELLOW}║${NC}                                          ${YELLOW}║${NC}         ${CYAN}║${NC}"
+    echo -e "${CYAN}║         ${YELLOW}╚══════════════════════════════════════════╝${NC}         ${CYAN}║${NC}"
+    echo -e "${CYAN}║                                                              ║${NC}"
+    echo -e "${CYAN}║         ${GREEN}✅ Panel is now looking like Paid Hosting!${NC}         ${CYAN}║${NC}"
+    echo -e "${CYAN}║                                                              ║${NC}"
+    echo -e "${CYAN}║      ${ORANGE}🚀 Your Pterodactyl Panel is Premium Ready!${NC}          ${CYAN}║${NC}"
+    echo -e "${CYAN}║                                                              ║${NC}"
+    echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    
+    read -rp "Press Enter to return to Theme Menu..." 
+    theme_menu
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# THEME UNINSTALL FUNCTION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+theme_uninstall_run() {
+    banner
+    echo -e "${RED}╔═══════════════════ THEME UNINSTALLATION ═══════════════════════╗${NC}"
+    echo ""
+    
+    typewriter "⚠️  WARNING: This will remove all installed themes!" 0.05 $RED
+    echo ""
+    
+    echo -ne "${RED}🤔${NC} Are you sure you want to uninstall themes? ${GREEN}(yes/no)${NC}: "
+    read -r UNINSTALL_CONFIRM
+    
+    while true; do
+        if [[ "$UNINSTALL_CONFIRM" == "yes" ]]; then
+            break
+        elif [[ "$UNINSTALL_CONFIRM" == "no" ]]; then
+            echo ""
+            typewriter "👌 Theme uninstallation cancelled!" 0.04 $YELLOW
+            sleep 2
+            theme_menu
+            return
+        else
+            echo ""
+            typewriter "I can't understand, type yes or no" 0.04 $RED
+            echo -ne "${RED}🤔${NC} Are you sure? ${GREEN}(yes/no)${NC}: "
+            read -r UNINSTALL_CONFIRM
+        fi
+    done
+    
+    echo ""
+    typewriter "🗑️  Removing all themes..." 0.05 $RED
+    echo ""
+    
+    loading_bar 2 "🧹 Cleaning Theme Files"
+    
+    PTERO_DIR="/var/www/pterodactyl"
+    BLUEPRINTS=(
+        nebula
+        huxregister
+        snowflakes
+        versionchanger
+        mcplugins
+        minecraftplayermanager
+        ShootingStars
+        subdomains
+    )
+    
+    total_bp=${#BLUEPRINTS[@]}
+    current_bp=0
+    
+    echo -e "${DIM}[Removing premium themes...]${NC}"
+    echo ""
+    
+    for bp in "${BLUEPRINTS[@]}"; do
+        current_bp=$((current_bp + 1))
+        printf "\r  ${CYAN}[${current_bp}/${total_bp}]${NC} ${YELLOW}Removing ${MAGENTA}$bp${NC}...                    "
+        
+        cd "$PTERO_DIR" 2>/dev/null || continue
+        if command -v blueprint &> /dev/null; then
+            blueprint -uninstall "$bp" > /dev/null 2>&1 &
+            bp_pid=$!
+            wait $bp_pid
+        fi
+        sleep 0.3
+    done
+    
+    echo -e "\r  ${GREEN}[✓]${NC} ${GREEN}All themes removed!          ${NC}\n"
+    
+    echo -e "${DIM}[Cleaning up blueprint files...]${NC}"
+    rm -rf /root/blueprints > /dev/null 2>&1
+    rm -f "$PTERO_DIR"/*.blueprint > /dev/null 2>&1
+    
+    explosion_effect
+    
+    echo ""
+    echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║                                                              ║${NC}"
+    echo -e "${GREEN}║            ✅ ALL THEMES UNINSTALLED SUCCESSFULLY!           ║${NC}"
+    echo -e "${GREEN}║                                                              ║${NC}"
+    echo -e "${GREEN}║         🔄 Your panel is back to default appearance          ║${NC}"
+    echo -e "${GREEN}║                                                              ║${NC}"
+    echo -e "${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    
+    read -rp "Press Enter to return to Theme Menu..." 
+    theme_menu
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -450,7 +627,6 @@ panel_install() {
     typewriter "🚀 Initiating Panel Deployment..." 0.05 $YELLOW
     echo ""
     
-    # Run real installation but hide output
     echo -e "${DIM}[Real installation in progress - it can take a while]${NC}"
    curl -fsSL https://pterodactyl-installer.se -o /tmp/pterodactyl-installer.sh
 
